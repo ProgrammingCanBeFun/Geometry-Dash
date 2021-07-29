@@ -29,15 +29,8 @@ class World:
             for x, tile in enumerate(row):
                 if tile == 0:
                     player = Player(self.screen, x * self.tile_size, y * self.tile_size,
-                                    self.tile_size * 0.75, self.tile_size * 0.75, "Light Blue", "Gray", self)
+                                    self.tile_size * 0.75, self.tile_size * 0.75, "Dark Blue", "Gray", self)
                     self.player = player
-                    # Check if player is off the screen
-                    if self.player.rect.x > SCREEN_WIDTH:
-                        new_player_x = SCREEN_WIDTH - 150
-                        new_scroll = self.player.rect.x - new_player_x
-                        self.player.rect.x = new_player_x
-                        global x_scroll
-                        x_scroll = new_scroll
 
         # Sprite Groups
         self.blocks = pygame.sprite.Group()
@@ -80,7 +73,7 @@ class World:
                                               self.tile_size, self.tile_size, "Pink", 'd')
                     elif tile == 9:
                         special_tile = Portal(self.screen, x * tile_size, y * tile_size,
-                                              self.tile_size, self.tile_size, "Light Blue", 'g')
+                                              self.tile_size, self.tile_size, "Dark Blue", 'g')
                     self.special_tiles.add(special_tile)
 
         self.sprite_groups = [self.player, self.blocks, self.obstacles, self.special_tiles]
@@ -148,10 +141,9 @@ class Player(pygame.sprite.Sprite):
             dx = self.speed
             dy = 0
 
-            self._check_if_jump(message=True)
+            self._check_if_jump()
 
             self.vel_y += self.gravity
-            print(f'Vel_Y: {self.vel_y}')
             dy += self.vel_y
 
             # Check for collision
@@ -171,7 +163,7 @@ class Player(pygame.sprite.Sprite):
                         elif g == 2:
                             self.check_special_tile_attributes(sprite)
                         else:
-                            if self._is_gravity_normal(True):
+                            if self._is_gravity_normal():
                                 if self.vel_y < 0:
                                     dy = self._block_jump(sprite)
                                 elif self.vel_y >= 0:
@@ -415,7 +407,7 @@ if __name__ == '__main__':
     x_scroll = 0
     pause = False
     stop = False
-    level = 6
+    level = 1
 
     # Initialize clock
     clock = pygame.time.Clock()
