@@ -1,22 +1,22 @@
 import pygame
-import argparse
 import extras as e
 
-
-# Tile types:
-# -1: Blank space
-# 0: Player
-# 1-3: Normal Platforms
-# 4: Spike
-# 5: Lava
-# 6: Water
-# 7: End portal
-# 8:
-# These tiles are stored in three separate sprite groups: self.players, self.obstacles, self.platforms
-#   which in turn are stored in a list.
+"""Game"""
 
 
 class World:
+    # Tile types:
+    # -1: Blank space
+    # 0: Player
+    # 1-3: Normal Platforms
+    # 4: Spike
+    # 5: Lava
+    # 6: Water
+    # 7: End portal
+    # 8: Backwards portal
+    # 9: Gravity portal
+    # These tiles are stored in three separate sprite groups: self.players, self.obstacles, self.platforms
+    #   which in turn are stored in a list.
     def __init__(self, screen, tile_size, data: list):
         self.data = data
         if not self._check_data():
@@ -62,7 +62,7 @@ class World:
                                         self.tile_size, self.tile_size - 4, "Red")
                     elif tile == 6:
                         obstacle = Spike(self.screen, x * self.tile_size, y * self.tile_size,
-                                        self.tile_size, self.tile_size, "White", 'd')
+                                         self.tile_size, self.tile_size, "White", 'd')
                     self.obstacles.add(obstacle)
                 elif 7 <= tile <= 9:
                     if tile == 7:
@@ -173,6 +173,9 @@ class Player(pygame.sprite.Sprite):
                                     dy = self._block_reverse_fall(sprite)
                                 if self.vel_y > 0:
                                     dy = self._block_reverse_jump(sprite)
+                    else:
+                        if g == 2:
+                            sprite.on = True
 
             self.rect.y += dy
             x_scroll = -dx
@@ -338,19 +341,6 @@ def set_level(level: int, data: list):
         run(world.sprite_groups, world.player)
 
 
-def game_start():
-    e.show_alert(
-        '''
-        Welcome to Geometry Dash. The goal of the game is to complete all the levels.
-        You are constantly moving in the right direction. If you crash into a block, you will die. 
-        Avoid landing on spikes, lava and water.
-        Get to the Green Portal. The Green Portal Teleports you to the next level.
-        Pink portals reverse the direction you travel in. 
-        Light Blue Portals reverse your gravity.
-        '''
-    )
-
-
 def run(sprite_groups, player):
     """Run the game."""
 
@@ -389,17 +379,136 @@ def run(sprite_groups, player):
         pygame.display.update()
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Runs Geometry Dash.")
-    parser.add_argument('--screen-width', dest='SCREEN_WIDTH', required=False)
-    args = parser.parse_args()
+"""Intro"""
 
+
+class Image:
+    def __init__(self, screen, image, x, y):
+        self.screen = screen
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+    def draw(self):
+        self.screen.blit(self.image, self.rect)
+
+    def position_center(self, centerx=None, centery=None):
+        if centerx:
+            self.rect.centerx = centerx
+        if centery:
+            self.rect.centery = centery
+
+
+class Button(Image):
+    def __init__(self, screen, image, x, y):
+        super().__init__(screen, image, x, y)
+        self.clicked = False
+
+    def draw(self):
+        action = False
+
+        pos = pygame.mouse.get_pos()
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1 and self.clicked is False:
+                self.clicked = True
+                action = True
+
+        if pygame.mouse.get_pressed()[0] == 1:
+            self.clicked = False
+
+        self.screen.blit(self.image, self.rect)
+
+        return action
+
+
+def run_intro():
+    screen = setup_screen()
+
+    global main_menu
+    main_menu = True
+
+    def terminate(redo=False):
+        global main_menu
+        main_menu = False
+        pygame.quit()
+        return redo
+
+    screen_rect = screen.get_rect()
+
+    title_img = pygame.image.load('img/title.png')
+    title = Image(screen, title_img, 0, 0)
+    title.position_center(centerx=screen_rect.centerx)
+    title.rect.y = 20
+
+    start_btn_img = pygame.image.load('img/start_btn.png')
+    start_btn = Button(screen, start_btn_img, 0, 0)
+    start_btn.position_center(screen_rect.centerx, screen_rect.centery)
+
+    instructions_btn_img = pygame.image.load('img/instructions_btn.png')
+    instructions_btn = Button(screen, instructions_btn_img, 0, 0)
+    instructions_btn.position_center(screen_rect.centerx)
+    instructions_btn.rect.top = start_btn.rect.bottom + 20
+
+    font = pygame.font.SysFont('timesnewroman', 30)
+
+    """start_instr = font.render("Press enter to start", False, e.colors["White"], e.colors["Light Orange"])
+    start_instr_rect = start_instr.get_rect()
+    start_instr_rect.centerx = screen_rect.centerx
+    start_instr_rect.bottom = screen_rect.centery
+
+    instr_instr = font.render("Press i for instructions.", False, e.colors["White"], e.colors["Light Orange"])
+    instr_instr_rect = instr_instr.get_rect()
+    instr_instr_rect.centerx = screen_rect.centerx
+    instr_instr_rect.top = start_instr_rect.bottom + 20"""
+
+    instructions = """
+Welcome to Geometry Dash. 
+Press the space bar to jump.
+Avoid the spikes and the lava.
+Don't crash into the sides of blocks.
+Green Circles complete the level.
+Blue Circles change your gravity.
+Pink Circles change your direction.
+Jump while touching a Yellow Circle to jump again.
+Get to the last level for the gravity challenge.
+                        """
+
+    while main_menu:
+        screen.fill(e.colors["Blue"])
+
+        title.draw()
+        if instructions_btn.draw():
+            e.show_alert(instructions, "How To Play")
+            return terminate(True)
+        if start_btn.draw():
+            return terminate()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                e.terminate()
+            """elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    return terminate()
+                elif event.key == pygame.K_i:
+                    e.show_alert(instructions, "How To Play")
+                    return terminate(True)"""
+
+        if main_menu:
+            pygame.display.update()
+
+
+def setup_screen():
+    # Initialize screen
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption('Geometry Dash')
+    return screen
+
+
+if __name__ == '__main__':
     # Set screen width
     SCREEN_WIDTH = 600
-    if args.SCREEN_WIDTH and int(args.SCREEN_WIDTH) > 600:
-        SCREEN_WIDTH = int(args.SCREEN_WIDTH)
-    # Set screen color
-    BG_COLOR = e.colors["Green"]
     # Set other settings
     TILE_SIZE = 50
 
@@ -407,7 +516,7 @@ if __name__ == '__main__':
     x_scroll = 0
     pause = False
     stop = False
-    level = 1
+    level = 1  # Leave at 1 except for testing
 
     # Initialize clock
     clock = pygame.time.Clock()
@@ -421,9 +530,8 @@ if __name__ == '__main__':
             max_height = height
     SCREEN_HEIGHT = max_height * TILE_SIZE
 
-    # Initialize screen
-    pygame.init()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption('Geometry Dash')
-
+    redo = True
+    while redo:
+        redo = run_intro()
+    screen = setup_screen()
     set_level(level, data)

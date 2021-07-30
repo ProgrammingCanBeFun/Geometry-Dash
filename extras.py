@@ -36,6 +36,8 @@ def reverse(item: int or float or bool):
 colors = {
     "Yellow": [255, 255, 0],
     "Red": [255, 0, 0],
+    "Orange": [255, 165, 0],
+    "Light Orange": [255, 201, 14],
     "Green": [0, 255, 0],
     "Blue": [0, 0, 255],
     "White": [255, 255, 255],
