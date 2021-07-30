@@ -42,6 +42,7 @@ class World:
         special_tile = None
         for y, row in enumerate(data):
             for x, tile in enumerate(row):
+                # Regular block
                 if 1 <= tile <= 3:
                     if tile == 1:
                         block = Block(self.screen, x * self.tile_size, y * self.tile_size,
@@ -53,6 +54,7 @@ class World:
                         block = Block(self.screen, x * self.tile_size, y * self.tile_size,
                                       self.tile_size, self.tile_size, "Black")
                     self.blocks.add(block)
+                # Obstacle and lava
                 elif 4 <= tile <= 6:
                     if tile == 4:
                         obstacle = Spike(self.screen, x * self.tile_size, y * self.tile_size,
@@ -64,7 +66,8 @@ class World:
                         obstacle = Spike(self.screen, x * self.tile_size, y * self.tile_size,
                                          self.tile_size, self.tile_size, "White", 'd')
                     self.obstacles.add(obstacle)
-                elif 7 <= tile <= 9:
+                # Special circles
+                elif 7 <= tile <= 10:
                     if tile == 7:
                         special_tile = Portal(self.screen, x * tile_size, y * tile_size,
                                               self.tile_size, self.tile_size, "Green", 'f')
@@ -74,6 +77,9 @@ class World:
                     elif tile == 9:
                         special_tile = Portal(self.screen, x * tile_size, y * tile_size,
                                               self.tile_size, self.tile_size, "Dark Blue", 'g')
+                    elif tile == 10:
+                        special_tile = Portal(self.screen, x * tile_size, y * tile_size,
+                                              self.tile_size, self.tile_size, "Yellow", 'j')
                     self.special_tiles.add(special_tile)
 
         self.sprite_groups = [self.player, self.blocks, self.obstacles, self.special_tiles]
@@ -117,6 +123,7 @@ class Player(pygame.sprite.Sprite):
         self.moving_right = False
         self.in_air = False
         self.jump = False
+        self.portal_jump = False
         self.vel_y = 0
         self.speed = 4
         self.jump_height = 11
@@ -216,6 +223,10 @@ class Player(pygame.sprite.Sprite):
             # Change gravity
             elif sprite.action == 'g':
                 self._change_gravity()
+            # Jump again
+            elif sprite.action == 'j':
+                self.portal_jump = True
+                self._check_if_jump()
             sprite.on = False
 
     def win(self):
@@ -236,10 +247,11 @@ class Player(pygame.sprite.Sprite):
     def _check_if_jump(self, message=False):
         if message:
             print(self.jump, self.in_air)
-        if self.jump is True and self.in_air is False:
+        if self.jump is True and (self.in_air is False or self.portal_jump is True):
             self.vel_y = self.jump_height * -1
             self.jump = False
             self.in_air = True
+            self.portal_jump = False
             if message:
                 print("Jump")
 
@@ -516,7 +528,7 @@ if __name__ == '__main__':
     x_scroll = 0
     pause = False
     stop = False
-    level = 1  # Leave at 1 except for testing
+    level = 7  # Leave at 1 except for testing
 
     # Initialize clock
     clock = pygame.time.Clock()
