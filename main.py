@@ -230,8 +230,8 @@ class Player(pygame.sprite.Sprite):
             sprite.on = False
 
     def win(self):
-        print("You won!")
-        e.terminate()
+        pygame.quit()
+        run_end()
 
     def _block_fall(self, sprite):
         self.vel_y = 0
@@ -462,18 +462,6 @@ def run_intro():
     instructions_btn.position_center(screen_rect.centerx)
     instructions_btn.rect.top = start_btn.rect.bottom + 20
 
-    font = pygame.font.SysFont('timesnewroman', 30)
-
-    """start_instr = font.render("Press enter to start", False, e.colors["White"], e.colors["Light Orange"])
-    start_instr_rect = start_instr.get_rect()
-    start_instr_rect.centerx = screen_rect.centerx
-    start_instr_rect.bottom = screen_rect.centery
-
-    instr_instr = font.render("Press i for instructions.", False, e.colors["White"], e.colors["Light Orange"])
-    instr_instr_rect = instr_instr.get_rect()
-    instr_instr_rect.centerx = screen_rect.centerx
-    instr_instr_rect.top = start_instr_rect.bottom + 20"""
-
     instructions = """
 Welcome to Geometry Dash. 
 Press the space bar to jump.
@@ -499,15 +487,42 @@ Get to the last level for the gravity challenge.
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 e.terminate()
-            """elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN:
-                    return terminate()
-                elif event.key == pygame.K_i:
-                    e.show_alert(instructions, "How To Play")
-                    return terminate(True)"""
 
         if main_menu:
             pygame.display.update()
+
+
+"""Victory"""
+
+
+def run_end():
+    global screen
+    screen = setup_screen()
+    screen_rect = screen.get_rect()
+
+    play_again_btn_image = pygame.image.load('img/play_again_btn.png')
+    play_again_btn = Button(screen, play_again_btn_image, 0, 0)
+    play_again_btn.position_center(centerx=screen_rect.centerx)
+    play_again_btn.rect.bottom = screen_rect.centery - 20
+
+    credits_image = pygame.image.load('img/credits.png')
+    credits = Image(screen, credits_image, 0, 0)
+    credits.position_center(centerx=screen_rect.centerx)
+    credits.rect.top = screen_rect.centery + 20
+
+    while True:
+
+        credits.draw()
+        if play_again_btn.draw():
+            pygame.quit()
+            screen = setup_screen()
+            set_level(START_LEVEL, data)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                e.terminate()
+
+        pygame.display.update()
 
 
 def setup_screen():
@@ -528,7 +543,8 @@ if __name__ == '__main__':
     x_scroll = 0
     pause = False
     stop = False
-    level = 7  # Leave at 1 except for testing
+    START_LEVEL = 1 # Leave at 1 except for testing
+    level = START_LEVEL
 
     # Initialize clock
     clock = pygame.time.Clock()
@@ -542,8 +558,10 @@ if __name__ == '__main__':
             max_height = height
     SCREEN_HEIGHT = max_height * TILE_SIZE
 
+    # Intro
     redo = True
     while redo:
         redo = run_intro()
+    # Game
     screen = setup_screen()
     set_level(level, data)
