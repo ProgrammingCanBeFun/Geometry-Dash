@@ -20,8 +20,7 @@ class World:
     def __init__(self, screen, tile_size, data: list):
         self.data = data
         if not self._check_data():
-            print("Data is corrupt.")
-            e.terminate()
+            raise IndexError
         self.screen = screen
         self.tile_size = tile_size
 
@@ -192,8 +191,6 @@ class Player(pygame.sprite.Sprite):
             self._position_inner_image()
 
     def die(self, test=False, message=False):
-        if message:
-            print("Game Over")
         if test:
             global pause
             pause = True
@@ -203,17 +200,14 @@ class Player(pygame.sprite.Sprite):
 
     def level_up(self):
         try:
-            print("Level Up")
             global level
             level += 1
             set_level(level, data)
         except IndexError:
             self.win()
 
-    def check_special_tile_attributes(self, sprite, message=False):
+    def check_special_tile_attributes(self, sprite):
         if sprite.on is True:
-            if message:
-                print(sprite.action)
             # Finish level
             if sprite.action == 'f':
                 self.level_up()
@@ -243,32 +237,25 @@ class Player(pygame.sprite.Sprite):
         dy = sprite.rect.bottom - self.rect.top
         return dy
 
-    def _check_if_jump(self, message=False):
-        if message:
-            print(self.jump, self.in_air)
+    def _check_if_jump(self):
         if self.jump is True and (self.in_air is False or self.portal_jump is True):
             self.vel_y = self.jump_height * -1
             self.jump = False
             self.in_air = True
             self.portal_jump = False
-            if message:
-                print("Jump")
 
     def _change_gravity(self):
         self.gravity *= -1
         self.jump_height *= -1
 
-    def _is_gravity_normal(self, message=False):
+    def _is_gravity_normal(self):
         answer = None
         if self.gravity > 0:
             answer = True
         elif self.gravity < 0:
             answer = False
-        if answer is None:
-            print("GeometryDashError: no gravity")
+        elif answer is None:
             e.terminate()
-        if message:
-            print(answer)
         return answer
 
     def _block_reverse_fall(self, sprite):
@@ -345,7 +332,6 @@ class Portal(pygame.sprite.Sprite):
 
 
 def set_level(level: int, data: list):
-    print(level)
     level_data = data[level - 1]
     world = World(screen, TILE_SIZE, level_data)
     while world.player.game_over is False:
