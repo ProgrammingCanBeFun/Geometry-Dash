@@ -230,7 +230,6 @@ class Player(pygame.sprite.Sprite):
             sprite.on = False
 
     def win(self):
-        pygame.quit()
         run_end()
 
     def _block_fall(self, sprite):
@@ -492,7 +491,7 @@ Get to the last level for the gravity challenge.
             pygame.display.update()
 
 
-"""Victory"""
+"""End"""
 
 
 def run_end():
@@ -514,9 +513,7 @@ def run_end():
 
         credits.draw()
         if play_again_btn.draw():
-            pygame.quit()
-            screen = setup_screen()
-            set_level(START_LEVEL, data)
+            game()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -533,6 +530,15 @@ def setup_screen():
     return screen
 
 
+def game():
+    global screen
+    global level
+    global data
+    screen = setup_screen()
+    level = START_LEVEL
+    set_level(level, data)
+
+
 if __name__ == '__main__':
     # Set screen width
     SCREEN_WIDTH = 600
@@ -543,25 +549,26 @@ if __name__ == '__main__':
     x_scroll = 0
     pause = False
     stop = False
-    START_LEVEL = 1 # Leave at 1 except for testing
+    START_LEVEL = 1  # Leave at 1 except for testing
     level = START_LEVEL
 
     # Initialize clock
     clock = pygame.time.Clock()
     FPS = 60
 
+    SCREEN_HEIGHT = 600
     data = e.get_data()
     max_height = 0
     for level_data in data:
         height = len(level_data)
         if height > max_height:
             max_height = height
-    SCREEN_HEIGHT = max_height * TILE_SIZE
+    if max_height * TILE_SIZE > SCREEN_HEIGHT:
+        SCREEN_HEIGHT = max_height * TILE_SIZE
 
     # Intro
     redo = True
     while redo:
         redo = run_intro()
     # Game
-    screen = setup_screen()
-    set_level(level, data)
+    game()
