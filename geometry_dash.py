@@ -1,5 +1,93 @@
 import pygame
-from data import extras as e
+import sys
+import json
+import tkinter
+from tkinter import messagebox
+
+"""Extras"""
+
+
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
+def get_data(filename='level_data.json'):
+    with open(filename, 'r') as f:
+        return json.load(f)
+
+
+def show_alert(message: str, title="Alert"):
+    root = tkinter.Tk()
+    root.withdraw()
+
+    # Message Box
+    messagebox.showinfo(title, message)
+
+
+def reverse(item: int or float or bool):
+    if type(item) == bool:
+        item = not item
+    elif type(item) == int or float:
+        item *= 1
+    else:
+        raise TypeError
+    return item
+
+
+colors = {
+    "Yellow": [255, 255, 0],
+    "Red": [255, 0, 0],
+    "Orange": [255, 165, 0],
+    "Light Orange": [255, 201, 14],
+    "Green": [0, 255, 0],
+    "Blue": [0, 0, 255],
+    "White": [255, 255, 255],
+    "Black": [0, 0, 0],
+    "Gray": [115, 115, 155],
+    "Dark Blue": [0, 0, 115],
+    "Pink": [255, 192, 203]
+}
+
+class Image:
+    def __init__(self, screen, image, x, y):
+        self.screen = screen
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+    def draw(self):
+        self.screen.blit(self.image, self.rect)
+
+    def position_center(self, centerx=None, centery=None):
+        if centerx:
+            self.rect.centerx = centerx
+        if centery:
+            self.rect.centery = centery
+
+
+class Button(Image):
+    def __init__(self, screen, image, x, y):
+        super().__init__(screen, image, x, y)
+        self.clicked = False
+
+    def draw(self):
+        action = False
+
+        pos = pygame.mouse.get_pos()
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1 and self.clicked is False:
+                self.clicked = True
+                action = True
+
+        if pygame.mouse.get_pressed()[0] == 1:
+            self.clicked = False
+
+        self.screen.blit(self.image, self.rect)
+
+        return action
+
 
 """Game"""
 
@@ -105,7 +193,7 @@ class Player(pygame.sprite.Sprite):
         self.screen = screen
         self.color = color
         self.image = pygame.Surface((width, height))
-        self.image.fill(e.colors[self.color])
+        self.image.fill(colors[self.color])
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -114,7 +202,7 @@ class Player(pygame.sprite.Sprite):
         # Initialize inner image
         self.inner_image_color = inner_color
         self.inner_image = pygame.Surface((width - 4, height - 4))
-        self.inner_image.fill(e.colors[self.inner_image_color])
+        self.inner_image.fill(colors[self.inner_image_color])
         self.inner_image_rect = self.inner_image.get_rect()
 
         # Initialize settings
@@ -127,8 +215,7 @@ class Player(pygame.sprite.Sprite):
         self.speed = 4
         self.jump_height = 11
         self.gravity = 0.75
-        self.game_over = False
-        self.level = level
+        self.result = None
 
     def draw(self):
         self.screen.blit(self.image, self.rect)
@@ -185,7 +272,7 @@ class Player(pygame.sprite.Sprite):
 
             self.rect.y += dy
             x_scroll = -dx
-            if self.rect.y >= SCREEN_HEIGHT:
+            if self.rect.y >= SCREEN_HEIGHT or self.rect.bottom < -200:
                 self.die()
 
             self._position_inner_image()
@@ -255,7 +342,7 @@ class Player(pygame.sprite.Sprite):
         elif self.gravity < 0:
             answer = False
         elif answer is None:
-            e.terminate()
+            terminate()
         return answer
 
     def _block_reverse_fall(self, sprite):
@@ -283,7 +370,7 @@ class Block(pygame.sprite.Sprite):
         self.rect.x += x_scroll
 
     def draw(self):
-        pygame.draw.rect(self.screen, e.colors[self.color], self.rect)
+        pygame.draw.rect(self.screen, colors[self.color], self.rect)
 
 
 class Spike(Block):
@@ -302,10 +389,10 @@ class Spike(Block):
 
     def draw(self):
         if self.orientation == 'u':
-            pygame.draw.polygon(self.screen, e.colors[self.color],
+            pygame.draw.polygon(self.screen, colors[self.color],
                                 [self.rect.bottomleft, self.rect.midtop, self.rect.bottomright])
         elif self.orientation == 'd':
-            pygame.draw.polygon(self.screen, e.colors[self.color],
+            pygame.draw.polygon(self.screen, colors[self.color],
                                 [self.rect.topleft, self.rect.midbottom,
                                  self.rect.topright])
 
@@ -328,13 +415,13 @@ class Portal(pygame.sprite.Sprite):
         self.rect.x += x_scroll
 
     def draw(self):
-        pygame.draw.circle(self.screen, e.colors[self.color], self.rect.center, self.rect.width / 2)
+        pygame.draw.circle(self.screen, colors[self.color], self.rect.center, self.rect.width / 2)
 
 
 def set_level(level: int, data: list):
     level_data = data[level - 1]
     world = World(screen, TILE_SIZE, level_data)
-    while world.player.game_over is False:
+    while True:
         run(world.sprite_groups, world.player)
 
 
@@ -353,15 +440,15 @@ def run(sprite_groups, player):
 
     clock.tick(FPS)
 
-    screen.fill(e.colors["Blue"])
+    screen.fill(colors["Blue"])
 
     # Check events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            e.terminate()
+            terminate()
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_q:
-                e.terminate()
+                terminate()
             if event.key == pygame.K_SPACE:
                 player.jump = True
         elif event.type == pygame.KEYUP:
@@ -379,53 +466,13 @@ def run(sprite_groups, player):
 """Intro"""
 
 
-class Image:
-    def __init__(self, screen, image, x, y):
-        self.screen = screen
-        self.image = image
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-
-    def draw(self):
-        self.screen.blit(self.image, self.rect)
-
-    def position_center(self, centerx=None, centery=None):
-        if centerx:
-            self.rect.centerx = centerx
-        if centery:
-            self.rect.centery = centery
-
-
-class Button(Image):
-    def __init__(self, screen, image, x, y):
-        super().__init__(screen, image, x, y)
-        self.clicked = False
-
-    def draw(self):
-        action = False
-
-        pos = pygame.mouse.get_pos()
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1 and self.clicked is False:
-                self.clicked = True
-                action = True
-
-        if pygame.mouse.get_pressed()[0] == 1:
-            self.clicked = False
-
-        self.screen.blit(self.image, self.rect)
-
-        return action
-
-
 def run_intro():
     screen = setup_screen()
 
     global main_menu
     main_menu = True
 
-    def terminate(redo=False):
+    def intro_terminate(redo=False):
         global main_menu
         main_menu = False
         pygame.quit()
@@ -433,16 +480,16 @@ def run_intro():
 
     screen_rect = screen.get_rect()
 
-    title_img = pygame.image.load('data/img/title.png')
+    title_img = pygame.image.load('img/title.png')
     title = Image(screen, title_img, 0, 0)
     title.position_center(centerx=screen_rect.centerx)
     title.rect.y = 20
 
-    start_btn_img = pygame.image.load('data/img/start_btn.png')
+    start_btn_img = pygame.image.load('img/start_btn.png')
     start_btn = Button(screen, start_btn_img, 0, 0)
     start_btn.position_center(screen_rect.centerx, screen_rect.centery)
 
-    instructions_btn_img = pygame.image.load('data/img/instructions_btn.png')
+    instructions_btn_img = pygame.image.load('img/instructions_btn.png')
     instructions_btn = Button(screen, instructions_btn_img, 0, 0)
     instructions_btn.position_center(screen_rect.centerx)
     instructions_btn.rect.top = start_btn.rect.bottom + 20
@@ -460,18 +507,18 @@ Get to the last level for the gravity challenge.
                         """
 
     while main_menu:
-        screen.fill(e.colors["Blue"])
+        screen.fill(colors["Blue"])
 
         title.draw()
         if instructions_btn.draw():
-            e.show_alert(instructions, "How To Play")
-            return terminate(True)
+            show_alert(instructions, "How To Play")
+            return intro_terminate(True)
         if start_btn.draw():
-            return terminate()
+            return intro_terminate()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                e.terminate()
+                intro_terminate()
 
         if main_menu:
             pygame.display.update()
@@ -485,12 +532,12 @@ def run_end():
     screen = setup_screen()
     screen_rect = screen.get_rect()
 
-    play_again_btn_image = pygame.image.load('data/img/play_again_btn.png')
+    play_again_btn_image = pygame.image.load('img/play_again_btn.png')
     play_again_btn = Button(screen, play_again_btn_image, 0, 0)
     play_again_btn.position_center(centerx=screen_rect.centerx)
     play_again_btn.rect.bottom = screen_rect.centery - 20
 
-    credits_image = pygame.image.load('data/img/credits.png')
+    credits_image = pygame.image.load('img/credits.png')
     credits = Image(screen, credits_image, 0, 0)
     credits.position_center(centerx=screen_rect.centerx)
     credits.rect.top = screen_rect.centery + 20
@@ -503,7 +550,7 @@ def run_end():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                e.terminate()
+                terminate()
 
         pygame.display.update()
 
@@ -535,15 +582,15 @@ if __name__ == '__main__':
     x_scroll = 0
     pause = False
     stop = False
-    START_LEVEL = 1  # Leave at 1 except for testing
+    START_LEVEL = 7  # Leave at 1 except for testing
     level = START_LEVEL
 
     # Initialize clock
     clock = pygame.time.Clock()
     FPS = 60
 
+    data = get_data()
     SCREEN_HEIGHT = 600
-    data = e.get_data()
     max_height = 0
     for level_data in data:
         height = len(level_data)
