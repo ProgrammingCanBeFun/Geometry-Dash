@@ -20,7 +20,7 @@ def terminate():
     sys.exit()
 
 
-def get_data(filename='level_data.json'):
+def get_data(filename='data/level_data.json'):
     with open(filename, 'r') as f:
         return json.load(f)
 
@@ -431,16 +431,16 @@ def run_intro():
 
     screen_rect = screen.get_rect()
 
-    title_img = pygame.image.load('img/title.png')
+    title_img = pygame.image.load('data/img/title.png')
     title = Image(screen, title_img, 0, 0)
     title.position_center(centerx=screen_rect.centerx)
     title.rect.y = 20
 
-    start_btn_img = pygame.image.load('img/start_btn.png')
+    start_btn_img = pygame.image.load('data/img/start_btn.png')
     start_btn = Button(screen, start_btn_img, 0, 0)
     start_btn.position_center(screen_rect.centerx, screen_rect.centery)
 
-    instructions_btn_img = pygame.image.load('img/instructions_btn.png')
+    instructions_btn_img = pygame.image.load('data/img/instructions_btn.png')
     instructions_btn = Button(screen, instructions_btn_img, 0, 0)
     instructions_btn.position_center(screen_rect.centerx)
     instructions_btn.rect.top = start_btn.rect.bottom + 20
@@ -481,12 +481,12 @@ Get to the last level for the gravity challenge.
 def run_end(screen):
     screen_rect = screen.get_rect()
 
-    play_again_btn_image = pygame.image.load('img/play_again_btn.png')
+    play_again_btn_image = pygame.image.load('data/img/play_again_btn.png')
     play_again_btn = Button(screen, play_again_btn_image, 0, 0)
     play_again_btn.position_center(centerx=screen_rect.centerx)
     play_again_btn.rect.bottom = screen_rect.centery - 20
 
-    credits_image = pygame.image.load('img/credits.png')
+    credits_image = pygame.image.load('data/img/credits.png')
     credits = Image(screen, credits_image, 0, 0)
     credits.position_center(centerx=screen_rect.centerx)
     credits.rect.top = screen_rect.centery + 20
@@ -559,7 +559,6 @@ def game():
     screen = setup_screen()
     try:
         while True:
-            print(level_data)
             if set_level(screen, level, data):
                 level += 1
     except IndexError:
