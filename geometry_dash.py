@@ -7,6 +7,14 @@ from tkinter import messagebox
 """Extras"""
 
 
+def setup_screen():
+    # Initialize screen
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption('Geometry Dash')
+    return screen
+
+
 def terminate():
     pygame.quit()
     sys.exit()
@@ -89,7 +97,7 @@ class Button(Image):
         return action
 
 
-"""Game"""
+"""World"""
 
 
 class World:
@@ -277,27 +285,17 @@ class Player(pygame.sprite.Sprite):
 
             self._position_inner_image()
 
-    def die(self, test=False, message=False):
-        if test:
-            global pause
-            pause = True
-        else:
-            global level
-            set_level(level, data)
+    def die(self):
+        self.result = False
 
-    def level_up(self):
-        try:
-            global level
-            level += 1
-            set_level(level, data)
-        except IndexError:
-            self.win()
+    def win(self):
+        self.result = True
 
     def check_special_tile_attributes(self, sprite):
         if sprite.on is True:
             # Finish level
             if sprite.action == 'f':
-                self.level_up()
+                self.win()
             # Change direction
             elif sprite.action == 'd':
                 self.speed *= -1
@@ -309,9 +307,6 @@ class Player(pygame.sprite.Sprite):
                 self.portal_jump = True
                 self._check_if_jump()
             sprite.on = False
-
-    def win(self):
-        run_end()
 
     def _block_fall(self, sprite):
         self.vel_y = 0
@@ -418,51 +413,6 @@ class Portal(pygame.sprite.Sprite):
         pygame.draw.circle(self.screen, colors[self.color], self.rect.center, self.rect.width / 2)
 
 
-def set_level(level: int, data: list):
-    level_data = data[level - 1]
-    world = World(screen, TILE_SIZE, level_data)
-    while True:
-        run(world.sprite_groups, world.player)
-
-
-def run(sprite_groups, player):
-    """Run the game."""
-
-    def update_sprites():
-        for sprite_group in sprite_groups:
-            try:
-                for sprite in sprite_group:
-                    sprite.draw()
-            except TypeError:
-                # sprite_group is player, so call player's draw method
-                sprite_group.draw()
-            sprite_group.update()
-
-    clock.tick(FPS)
-
-    screen.fill(colors["Blue"])
-
-    # Check events
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            terminate()
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_q:
-                terminate()
-            if event.key == pygame.K_SPACE:
-                player.jump = True
-        elif event.type == pygame.KEYUP:
-            if event.key == pygame.K_SPACE:
-                player.jump = False
-
-    # Update sprites
-    update_sprites()
-
-    # Update screen
-    if not pause:
-        pygame.display.update()
-
-
 """Intro"""
 
 
@@ -527,9 +477,7 @@ Get to the last level for the gravity challenge.
 """End"""
 
 
-def run_end():
-    global screen
-    screen = setup_screen()
+def run_end(screen):
     screen_rect = screen.get_rect()
 
     play_again_btn_image = pygame.image.load('img/play_again_btn.png')
@@ -555,21 +503,66 @@ def run_end():
         pygame.display.update()
 
 
-def setup_screen():
-    # Initialize screen
-    pygame.init()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption('Geometry Dash')
-    return screen
+"""Game"""
+
+
+def set_level(screen, level: int, data: list):
+    level_data = data[level - 1]
+    world = World(screen, TILE_SIZE, level_data)
+    while world.player.result is None:
+        run(screen, world.sprite_groups, world.player)
+    return world.player.result
+
+
+def run(screen, sprite_groups, player):
+    """Run the game."""
+
+    def update_sprites():
+        for sprite_group in sprite_groups:
+            try:
+                for sprite in sprite_group:
+                    sprite.draw()
+            except TypeError:
+                # sprite_group is player, so call player's draw method
+                sprite_group.draw()
+            sprite_group.update()
+
+    clock.tick(FPS)
+
+    screen.fill(colors["Blue"])
+
+    # Check events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            terminate()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_q:
+                terminate()
+            if event.key == pygame.K_SPACE:
+                player.jump = True
+        elif event.type == pygame.KEYUP:
+            if event.key == pygame.K_SPACE:
+                player.jump = False
+
+    # Update sprites
+    update_sprites()
+
+    # Update screen
+    if not pause:
+        pygame.display.update()
 
 
 def game():
-    global screen
     global level
-    global data
-    screen = setup_screen()
     level = START_LEVEL
-    set_level(level, data)
+    screen = setup_screen()
+    try:
+        while True:
+            print(level_data)
+            if set_level(screen, level, data):
+                level += 1
+    except IndexError:
+        run_end(screen)
 
 
 if __name__ == '__main__':
